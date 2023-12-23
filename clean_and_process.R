@@ -138,6 +138,11 @@ if ("?" %in% df$CATEGORIE_TITRE) {
   df$CATEGORIE_TITRE <- gsub("\\?", mode_value, df$CATEGORIE_TITRE)
 }
 
+if("?" %in% df$ID_REFA_LDA | "" %in% df$ID_REFA_LDA)
+{
+  df$ID_REFA_LDA[df$ID_REFA_LDA %in% c("","?")] <- "unknown"
+}
+
 # Sort the dataframe based on the 'JOUR' column in descending order
 df <- arrange(df, desc(JOUR))
 
