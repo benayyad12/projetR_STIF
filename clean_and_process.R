@@ -131,16 +131,14 @@ if ("Moins de 5" %in% df$NB_VALD) {
 
 # Check if "?" exists in CATEGORIE_TITRE and replace with the mode value
 if ("?" %in% df$CATEGORIE_TITRE) {
-  # Calculate the mode
-  mode_value <- names(sort(table(df$CATEGORIE_TITRE), decreasing = TRUE)[1])
   
   # Replace "?" with the mode value
-  df$CATEGORIE_TITRE <- gsub("\\?", mode_value, df$CATEGORIE_TITRE)
+  df$CATEGORIE_TITRE <- gsub("\\?", "NON DEFINI", df$CATEGORIE_TITRE)
 }
 
 if("?" %in% df$ID_REFA_LDA | "" %in% df$ID_REFA_LDA)
 {
-  df$ID_REFA_LDA[df$ID_REFA_LDA %in% c("","?")] <- "unknown"
+  df$ID_REFA_LDA[df$ID_REFA_LDA %in% c("","?")] <- "NON DEFINI"
 }
 
 # Sort the dataframe based on the 'JOUR' column in descending order
