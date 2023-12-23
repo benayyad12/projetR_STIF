@@ -115,7 +115,7 @@ print(outliers_data)
 df_no_outliers <- df[-outliers_indices, ]
 
 # Update the dataframe
-df <- df
+df <- df_no_outliers
 
 # Remove leading and trailing spaces from the NB_VALD column
 df$NB_VALD <- str_trim(df$NB_VALD)
