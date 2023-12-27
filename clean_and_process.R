@@ -143,7 +143,91 @@ clean_and_process_data <- function(df)
 }
 
 
-# # Example usage for each dataset
-# df_2017s2 <- read.delim("Data/data-rf-2017/2017_S2_NB_FER.txt")
-# df_2017s2 <- clean_and_process_data(df_2017s2)
 
+# function to check names of columns if they are identical in all dataframes : 
+
+check_columns <- function(dataframes)
+{
+  columns_references <- names(dataframes[[1]])
+  
+  equal <- all(sapply(dataframes,function(dataframe) identical(names(dataframe),columns_references)))
+  
+  if(equal)
+  {
+    print("All dataframes have the same columns")
+  }
+  else{
+    print("dataframes have not identical columns names")
+  }
+}
+
+
+# read dataset as dataframes : 
+
+df_2017s2 <- read.delim("Data/data-rf-2017/2017_S2_NB_FER.txt")
+
+df_2017s1 <- read.delim("Data/data-rf-2017/2017S1_NB_FER.txt")
+
+df_2018s1 <- read.delim("Data/data-rf-2018/2018_S1_NB_FER.txt")
+
+df_2018s2 <- read.delim("Data/data-rf-2018/2018_S2_NB_Fer.txt")
+
+df_2019s1 <- read.delim("Data/data-rf-2019/2019_S1_NB_FER.txt")
+
+df_2019s2 <- read.delim("Data/data-rf-2019/2019_S2_NB_FER.txt")
+
+df_2020s1 <- read.delim("Data/data-rf-2020/2020_S1_NB_FER.txt")
+
+df_2020s2 <- read.delim("Data/data-rf-2020/2020_S2_NB_FER.txt")
+
+df_2021s1 <- read.delim("Data/data-rf-2021/2021_S1_NB_FER.txt")
+
+df_2021s2 <- read.delim("Data/data-rf-2021/2021_S2_NB_FER.txt")
+
+df_2022s1 <- read.delim("Data/data-rf-2022/2022_S1_NB_FER.txt")
+
+df_2022s2 <- read.delim("Data/data-rf-2022/2022_S2_NB_FER.txt",sep=";",header = TRUE)
+
+
+# process dataframes using clean_and_process script : 
+
+df_2017s1 <- clean_and_process_data(df_2017s1)
+
+df_2017s2 <- clean_and_process_data(df_2017s2)
+
+df_2018s1 <- clean_and_process_data(df_2018s1)
+
+df_2018s2 <- clean_and_process_data(df_2018s2)
+
+
+df_2019s1 <- clean_and_process_data(df_2019s1)
+
+df_2019s2 <- clean_and_process_data(df_2019s2)
+
+
+df_2020s1 <- clean_and_process_data(df_2020s1)
+
+
+df_2020s2 <- clean_and_process_data(df_2020s2)
+
+
+df_2021s1 <- clean_and_process_data(df_2021s1)
+
+df_2021s2 <- clean_and_process_data(df_2021s2)
+
+
+df_2022s1 <- clean_and_process_data(df_2022s1)
+
+df_2022s2 <- clean_and_process_data(df_2022s2)
+
+
+# check names of all dataframes if they are equal : 
+dataframes_list <- list(df_2017s1,df_2017s2, df_2018s1, df_2018s2, df_2019s1,df_2019s2, df_2020s1, df_2020s2, df_2021s1, df_2021s2, df_2022s1, df_2022s2)
+check_columns(dataframes_list)
+
+# change column name from lda to ID_REFA_LDA
+names(df_2022s2)[names(df_2022s2) == "lda"] <- "ID_REFA_LDA"
+
+# check again 
+dataframes_list <- list(df_2017s1,df_2017s2, df_2018s1, df_2018s2, df_2019s1,df_2019s2, df_2020s1, df_2020s2, df_2021s1, df_2021s2, df_2022s1, df_2022s2)
+check_columns(dataframes_list)
