@@ -255,6 +255,11 @@ validations <- bind_rows(
      df_2022s2_new,
      df_2023s1_new
 )
+names(arrets)[names(arrets) == "idrefa_lda"] <- "ID_REFA_LDA"
+
+# change type of ID_REFA_LDA to string
+
+arrets <- mutate(arrets, ID_REFA_LDA = as.character(ID_REFA_LDA))
 
 # Perform a full join with arrets based on "ID_REFA_LDA"
 data <- full_join(validations, arrets, by = "ID_REFA_LDA")
