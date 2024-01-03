@@ -3,6 +3,10 @@ library(stringr)
 library(ggplot2)
 library(sf)
 
+
+
+
+
 clean_and_process_data <- function(df)
 {
   # Display column names
@@ -136,6 +140,8 @@ clean_and_process_data <- function(df)
     df$ID_REFA_LDA[df$ID_REFA_LDA %in% c("","?")] <- "UNKNOWN"
   }
   
+  df$ID_REFA_LDA <- as.character(df$ID_REFA_LDA)
+  
   # Sort the dataframe based on the 'JOUR' column in descending order
   df <- arrange(df, desc(JOUR))
   
@@ -198,54 +204,57 @@ arrets <- st_read("data/REF_ZdA/PL_ZDL_R_11_12_2023.shp")
 
 # process dataframes using clean_and_process script : 
 
-df_2017s1 <- clean_and_process_data(df_2017s1)
+df_2017s1_new <- clean_and_process_data(df_2017s1)
 
-df_2017s2 <- clean_and_process_data(df_2017s2)
+df_2017s2_new <- clean_and_process_data(df_2017s2)
 
-df_2018s1 <- clean_and_process_data(df_2018s1)
+df_2018s1_new <- clean_and_process_data(df_2018s1)
 
-df_2018s2 <- clean_and_process_data(df_2018s2)
-
-
-df_2019s1 <- clean_and_process_data(df_2019s1)
-
-df_2019s2 <- clean_and_process_data(df_2019s2)
+df_2018s2_new <- clean_and_process_data(df_2018s2)
 
 
-df_2020s1 <- clean_and_process_data(df_2020s1)
+df_2019s1_new <- clean_and_process_data(df_2019s1)
+
+df_2019s2_new <- clean_and_process_data(df_2019s2)
 
 
-df_2020s2 <- clean_and_process_data(df_2020s2)
+df_2020s1_new <- clean_and_process_data(df_2020s1)
 
 
-df_2021s1 <- clean_and_process_data(df_2021s1)
-
-df_2021s2 <- clean_and_process_data(df_2021s2)
+df_2020s2_new <- clean_and_process_data(df_2020s2)
 
 
-df_2022s1 <- clean_and_process_data(df_2022s1)
+df_2021s1_new <- clean_and_process_data(df_2021s1)
 
-df_2022s2 <- clean_and_process_data(df_2022s2)
-
-df_2023s1 <- clean_and_process_data(df_2023s1)
+df_2021s2_new <- clean_and_process_data(df_2021s2)
 
 
+df_2022s1_new <- clean_and_process_data(df_2022s1)
+
+df_2022s2_new <- clean_and_process_data(df_2022s2)
+
+df_2023s1_new <- clean_and_process_data(df_2023s1)
+
+# change type of ID_REFA_LDA to string
+arrets <- mutate(arrets, ID_REFA_LDA = as.character(ID_REFA_LDA))
 
 
-# check names of all dataframes if they are equal : 
-dataframes_list <- list(df_2017s1,df_2017s2, df_2018s1, df_2018s2, df_2019s1,df_2019s2, df_2020s1, df_2020s2, df_2021s1, df_2021s2, df_2022s1, df_2022s2, df_2023s1)
-check_columns(dataframes_list)
+# Combine dataframes
+validations <- bind_rows(
+      df_2017s1_new,
+      df_2017s2_new,
+      df_2018s1_new,
+     df_2018s2_new,
+     df_2019s1_new,
+     df_2019s2_new,
+     df_2020s1_new,
+     df_2020s2_new,
+    df_2021s1_new,
+     df_2021s2_new,
+     df_2022s1_new,
+     df_2022s2_new,
+     df_2023s1_new
+)
 
-
-# change column name in arret from idrefa_lda to ID_REFA_LDA
-names(arrets)[names(arrets) == "idrefa_lda"] <- "ID_REFA_LDA"
-
-# check again 
-dataframes_list <- list(df_2017s1,df_2017s2, df_2018s1, df_2018s2, df_2019s1,df_2019s2, df_2020s1, df_2020s2, df_2021s1, df_2021s2, df_2022s1, df_2022s2,df_2023s1)
-check_columns(dataframes_list)
-
-
-
-# join all data : 
-all_data <- bind_rows(df_2017s2, df_2017s1, df_2018s1, df_2018s2, df_2019s1, df_2019s2, df_2020s1, df_2020s2, df_2021s1, df_2021s2, df_2022s1, df_2022s2, df_2023s1)
-
+# Perform a full join with arrets based on "ID_REFA_LDA"
+data <- full_join(validations, arrets, by = "ID_REFA_LDA")
