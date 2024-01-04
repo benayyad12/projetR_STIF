@@ -26,27 +26,38 @@ data %>%
        x = "Month",
        y = "Validation Counts")
 
-# Step 4: Identify and Handle Outliers
-data %>%
-  filter(!is.na(NB_VALD)) %>%
-  ggplot(aes(x = 1, y = NB_VALD)) +
-  geom_boxplot(fill = "lightcoral") +
-  labs(title = "Boxplot of Validation Counts",
-       x = "",
-       y = "Validation Counts")
 
 # convert NB_VALD to INT 
 
 data <- data %>%
   mutate(NB_VALD = as.integer(NB_VALD))
 
-# Step 5: Comparison with Norms
-# 5.1 Define Normal Weeks
+# Step 4: Comparison with Norms
+# 4.1 Define Normal Weeks
 normal_week <- data %>%
   group_by(week = lubridate::week(JOUR)) %>%
   summarize(avg_validation = mean(NB_VALD))
 
-# Assuming you have a week column in your dataset
-data_with_week <- data %>%
-  mutate(week = lubridate::week(JOUR))
+
+# create a Weekday Variable
+data$weekday <- weekdays(as.Date(data$JOUR))
+
+
+selected_date <- as.Date("2022-07-07")
+
+# Define the start and end dates for the week around the selected date
+start_date <- selected_date - lubridate::days(3)  # Three days before the selected date
+end_date <- selected_date + lubridate::days(3)    # Three days after the selected date
+
+# Filter the data for the selected week
+selected_week_data <- data %>%
+  filter(JOUR >= start_date & JOUR <= end_date)
+
+selected_week_data <- selected_week_data %>%
+  mutate(NB_VALD = as.integer(NB_VALD))
+
+# Calculate total validations per day
+total_validations_per_day <- selected_week_data %>%
+  group_by(JOUR) %>%
+  summarise(total_validations = sum(NB_VALD))
 
