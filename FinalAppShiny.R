@@ -33,10 +33,6 @@ ui <- dashboardPage(
       box(
         title = "Station Statistics",
         verbatimTextOutput("station_stats")
-      ),
-      box(
-        title = "Station Map",
-        plotlyOutput("station_map")
       )
     )
   )
