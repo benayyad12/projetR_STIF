@@ -1,0 +1,386 @@
+---
+title: "Report_R_STIF"
+author: "Abir Hammache, Issam Toure, Abdessalam Benayyad, Edouardo Rodrigues"
+format: pdf
+---
+
+### In this data analysis project, we're looking at Île-de-France railway station frequentation data for the years 2017 to 2022. The main objective is to analyze and visualize ridership trends, creating a dashboard to monitor and compare ridership against the norm.
+
+# Pre-processing and data cleanning
+
+## First, we launch the file "clean_and_process.R"
+
+### we load the various libraries
+
+```{r}
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(sf)
+```
+
+### Definition of a "clean_and_process_data" function that takes a dataframe as parameter and also returns a dataframe. All the lines in this function are commented out, describing the action it performs on the dataframe. This function globally cleans the dataframe passed as a parameter.
+
+```{r}
+clean_and_process_data <- function(df)
+{
+  # Display column names
+  names(df)
+  
+  # Display dimensions of the dataframe
+  dim(df)
+  
+  # Display number of columns
+  ncol(df)
+  
+  # Display number of rows
+  nrow(df)
+  
+  # Display structure of the dataframe
+  str(df)
+  
+  # Display summary statistics of the dataframe
+  summary(df)
+  
+  # Display structure of the dataframe again
+  str(df)
+  
+  if("lda" %in% names(df))
+  {
+    names(df)[names(df) == "lda"] <- "ID_REFA_LDA"
+  }
+  
+  # Null values in every column
+  null_values_per_column <- sapply(df, function(x) sum(is.na(x)))
+  null_values_per_column
+  
+  # Create a function to calculate the percentage of missing values in a column
+  missing_percentage <- function(x) {
+    sum(is.na(x)) / length(x) * 100
+  }
+  
+  # Calculate the percentage of missing values for each column
+  missing_values <- sapply(df, missing_percentage)
+  
+  # Create a dataframe for plotting
+  plot_data <- data.frame(column = names(missing_values), percentage = missing_values)
+  
+  # Create a boxplot using ggplot2
+  ggplot(plot_data, aes(x = column, y = percentage)) +
+    geom_bar(stat = "identity", fill = "skyblue", width = 0.7) +
+    labs(title = "Percentage of Missing Values in Each Column",
+         x = "Columns",
+         y = "Percentage Missing") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    ylim(0, 100)
+  
+  # Check for duplicates
+  any(duplicated(df))
+  
+  # Check the total number of duplicate rows
+  num_duplicates <- sum(duplicated(df))
+  print(num_duplicates)
+  
+
+  # Types of TITRES:
+  unique(df$CATEGORIE_TITRE)
+  
+  # Number of TITRES:
+  df %>% group_by(CATEGORIE_TITRE) %>% summarise(n())
+  
+
+  # Remove spaces from the NB_VALD column using str_trim
+  df$NB_VALD <- str_trim(df$NB_VALD)
+  print(df$NB_VALD)
+  
+  # Convert 'JOUR' to Date type
+  df$JOUR <- as.Date(df$JOUR, format = "%d/%m/%Y")
+  str(df$JOUR)
+  
+  # make ID_REFA_LDA same type : 
+
+  # Identify outliers using IQR
+  identify_outliers <- function(df, threshold = 1.5) {
+    outliers <- numeric()
+    for (col in colnames(df)) {
+      if (is.numeric(df[[col]])) {
+        q1 <- quantile(df[[col]], 0.25)
+        q3 <- quantile(df[[col]], 0.75)
+        iqr <- q3 - q1
+        lower_bound <- q1 - threshold * iqr
+        upper_bound <- q3 + threshold * iqr
+        
+        # Identify outliers
+        outliers <- c(outliers, which(df[[col]] < lower_bound | df[[col]] > upper_bound))
+      }
+    }
+    unique(outliers)
+  }
+  
+  # Identify outliers using IQR
+  outliers_indices <- identify_outliers(df)
+  
+  # Display rows with outliers
+  outliers_data <- df[outliers_indices, ]
+  
+  # Print the indices of rows with outliers
+  print(outliers_indices)
+  
+  # Print the rows with outliers
+  print(outliers_data)
+  
+  # Remove outliers
+  df_no_outliers <- df[-outliers_indices, ]
+  
+  # Update the dataframe
+  df <- df_no_outliers
+  
+  # Display unique values in the NB_VALD column
+  unique(df$NB_VALD)
+  
+  # Replace "Moins de 5" with the integer value 3 in the 'NB_VALD' column (3 is the median in this case)
+  if ("Moins de 5" %in% df$NB_VALD) {
+    df$NB_VALD <- ifelse(df$NB_VALD == "Moins de 5", 3, df$NB_VALD)
+  }
+  
+  # Check if "?" exists in CATEGORIE_TITRE and replace with the mode value
+  if ("?" %in% df$CATEGORIE_TITRE) {
+    
+    # Replace "?" with the mode value
+    df$CATEGORIE_TITRE <- gsub("\\?", "NON DEFINI", df$CATEGORIE_TITRE)
+  }
+  
+  if("?" %in% df$ID_REFA_LDA | "" %in% df$ID_REFA_LDA)
+  {
+    df$ID_REFA_LDA[df$ID_REFA_LDA %in% c("","?")] <- "UNKNOWN"
+  }
+  
+  df$ID_REFA_LDA <- as.character(df$ID_REFA_LDA)
+  
+  # Sort the dataframe based on the 'JOUR' column in descending order
+  df <- arrange(df, desc(JOUR))
+  
+  return(df)
+}
+```
+
+### function to check names of columns if they are identical in all dataframes
+
+```{r}
+check_columns <- function(dataframes)
+{
+  columns_references <- names(dataframes[[1]])
+  
+  equal <- all(sapply(dataframes,function(dataframe) identical(names(dataframe),columns_references)))
+  
+  if(equal)
+  {
+    print("All dataframes have the same columns")
+  }
+  else{
+    print("dataframes have not identical columns names")
+  }
+}
+```
+
+### read dataset as dataframes :
+
+```{r}
+df_2017s2 <- read.delim("Data/2017_S2_NB_FER.txt")
+df_2018s1 <- read.delim("Data/2018_S1_NB_FER.txt")
+df_2018s2 <- read.delim("Data/2018_S2_NB_Fer.txt")
+df_2019s1 <- read.delim("Data/2019_S1_NB_FER.txt")
+df_2019s2 <- read.delim("Data/2019_S2_NB_FER.txt")
+df_2020s1 <- read.delim("Data/2020_S1_NB_FER.txt")
+df_2020s2 <- read.delim("Data/2020_S2_NB_FER.txt")
+df_2021s1 <- read.delim("Data/2021_S1_NB_FER.txt")
+df_2021s2 <- read.delim("Data/2021_S2_NB_FER.txt")
+df_2022s1 <- read.delim("Data/2022_S1_NB_FER.txt")
+df_2022s2 <- read.delim("Data/2022_S2_NB_FER.txt",sep=";",header = TRUE)
+df_2023s1 <- read.csv("data/validations-reseau-ferre-nombre-validations-par-jour-1er-semestre-2023.csv", header = TRUE, sep = ";")
+```
+
+### process dataframes using clean_and_process script :
+
+```{r}
+df_2017s2_new <- clean_and_process_data(df_2017s2)
+df_2018s1_new <- clean_and_process_data(df_2018s1)
+df_2018s2_new <- clean_and_process_data(df_2018s2)
+df_2019s1_new <- clean_and_process_data(df_2019s1)
+df_2019s2_new <- clean_and_process_data(df_2019s2)
+df_2020s1_new <- clean_and_process_data(df_2020s1)
+df_2020s2_new <- clean_and_process_data(df_2020s2)
+df_2021s1_new <- clean_and_process_data(df_2021s1)
+df_2021s2_new <- clean_and_process_data(df_2021s2)
+df_2022s1_new <- clean_and_process_data(df_2022s1)
+df_2022s2_new <- clean_and_process_data(df_2022s2)
+df_2023s1_new <- clean_and_process_data(df_2023s1)
+```
+
+### rename the column "idrefa_lda" to "ID_REFA_LDA"
+
+```{r}
+names(arrets)[names(arrets) == "idrefa_lda"] <- "ID_REFA_LDA"
+```
+
+### change type of ID_REFA_LDA to string
+
+```{r}
+arrets <- mutate(arrets, ID_REFA_LDA = as.character(ID_REFA_LDA))
+```
+
+### Combine dataframes
+
+```{r}
+validations <- bind_rows(
+      df_2017s2_new,
+      df_2018s1_new,
+     df_2018s2_new,
+     df_2019s1_new,
+     df_2019s2_new,
+     df_2020s1_new,
+     df_2020s2_new,
+    df_2021s1_new,
+     df_2021s2_new,
+     df_2022s1_new,
+     df_2022s2_new,
+     df_2023s1_new
+)
+```
+
+### Perform a full join with arrets based on "ID_REFA_LDA"
+
+```{r}
+data <- full_join(validations, arrets, by = "ID_REFA_LDA")
+```
+
+### Save the dataframe we have created to RDS, the data has lot information, so it's not necessary to save in RDS
+
+```{r}
+#saveRDS(data,"./data/data.RDS")
+```
+
+### visualization of the data we have just created
+
+```{r}
+View(data)
+```
+
+# Study of rail network ridership trends
+
+## Now we run the file file "EDA.R"
+
+### Step 1: Load required libraries
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+```
+
+### Step 2: Explore General Trends and Patterns
+
+### Overview of the Dataset
+
+```{r}
+summary(data)
+str(data)
+```
+
+### Explore Time Trends
+
+```{r}
+data %>%
+  mutate(JOUR = as.Date(JOUR)) %>%
+  ggplot(aes(x = JOUR)) +
+  geom_line(stat = "count", color = "blue") +
+  labs(title = "Daily Validation Counts Over Time")
+```
+
+### Step 3: Identify Seasonality and Monthly Trends
+
+```{r}
+data %>%
+  mutate(month = month(JOUR)) %>%
+  ggplot(aes(x = month, y = NB_VALD)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Monthly Validation Counts",
+       x = "Month",
+       y = "Validation Counts")
+```
+
+### convert NB_VALD to INT
+
+```{r}
+data <- data %>%
+  mutate(NB_VALD = as.integer(NB_VALD))
+```
+
+### Conversion des données simplifiées en un objet 'sf'
+
+```{r}
+data_sf <- st_as_sf(data)
+data_sampled <- sample_n(data_sf, 10000)
+```
+
+### Agrégation des données simplifiés
+
+```{r}
+data_aggregated <- data_sampled |>
+  group_by(LIBELLE_ARRET) |>
+  summarize(geometry = st_convex_hull(st_union(geometry))) |> distinct()
+```
+
+### Transformation des données en système de coordonnées WGS 84
+
+```{r}
+data_sf_poly <- data_aggregated[st_geometry_type(data_aggregated) %in% c("POLYGON"), ]
+
+data_sf_wgs84 <- st_transform(data_sf_poly, crs = 4326)
+```
+
+### Step 4: Comparison with Norms
+
+### 4.1 Define Normal Weeks
+
+```{r}
+normal_week <- data %>%
+  group_by(week = lubridate::week(JOUR)) %>%
+  summarize(avg_validation = mean(NB_VALD))
+```
+
+### create a Weekday Variable
+
+```{r}
+data$weekday <- weekdays(as.Date(data$JOUR))
+```
+
+### example of selecting a date, and calculating the number of validations 3 days before to 3 days after this date.
+
+```{r}
+selected_date <- as.Date("2022-07-07")
+
+# Define the start and end dates for the week around the selected date
+start_date <- selected_date - lubridate::days(3)  # Three days before the selected date
+end_date <- selected_date + lubridate::days(3)    # Three days after the selected date
+
+# Filter the data for the selected week
+selected_week_data <- data %>%
+  filter(JOUR >= start_date & JOUR <= end_date)
+
+selected_week_data <- selected_week_data %>%
+  mutate(NB_VALD = as.integer(NB_VALD))
+
+# Calculate total validations per day
+total_validations_per_day <- selected_week_data %>%
+  group_by(JOUR) %>%
+  summarise(total_validations = sum(NB_VALD))
+```
+
+## To put all this in place visually on an application and select periods, stops, etc., all we have to do now is launch the "FinalAppShiny.R" file, to create the shiny application.
+
+# Conclusion
+
+### Overall, we observe that during the school vacations the number of validations drops considerably, by as much as 75% in some resorts, from 20M to 5M.
+
+### Another observation we make is that during the covid period, the number of validations remains constantly low, regardless of school vacations.
