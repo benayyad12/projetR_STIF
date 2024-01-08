@@ -3,6 +3,10 @@ library(shiny)
 library(shinydashboard)
 library(plotly)
 library(dplyr)
+library(sf)
+library(leaflet)
+library(ggplot2)
+
 library(lubridate)
 
 # Assuming you have a data frame named 'data', adjust accordingly
@@ -17,8 +21,10 @@ ui <- dashboardPage(
     dateRangeInput("comparison_period", label = "Select Comparison Period", start = "2022-01-01", end = "2022-12-31"),
     selectizeInput("selected_station", label = "Select Station", choices = unique(data$LIBELLE_ARRET)[1:10], multiple = FALSE)
   )
+  
   ,
   dashboardBody(
+    
     fluidRow(
       box(
         title = "Total Validations by Day",
@@ -33,6 +39,9 @@ ui <- dashboardPage(
       box(
         title = "Station Statistics",
         verbatimTextOutput("station_stats")
+      ),
+      box(
+        leafletOutput("map")
       )
     )
   )
@@ -40,6 +49,19 @@ ui <- dashboardPage(
 
 # Server definition
 server <- function(input, output) {
+  
+  output$map <- renderLeaflet({
+    leaflet(data_sf_wgs84) %>%
+      addTiles() %>%
+      addPolygons(
+        color = ~ifelse(LIBELLE_ARRET == input$selected_station, "red", "blue"),
+        fillColor = ~ifelse(LIBELLE_ARRET == input$selected_station, "red", "blue"),
+        fillOpacity = 0.7,
+        weight = 1,
+        label = ~LIBELLE_ARRET, 
+        popup = ~LIBELLE_ARRET) 
+  })
+  
   
   # Filter data based on user input
   filtered_data <- reactive({
@@ -50,6 +72,7 @@ server <- function(input, output) {
                   filter(JOUR >= input$comparison_period[1] & JOUR <= input$comparison_period[2]) %>%
                   mutate(period = "Comparison"))
   })
+  
   
   # Create a plot of total validations by day
   output$daily_plot <- renderPlotly({

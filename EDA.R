@@ -32,6 +32,20 @@ data %>%
 data <- data %>%
   mutate(NB_VALD = as.integer(NB_VALD))
 
+
+# Conversion des données simplifiées en un objet 'sf'
+data_sf <- st_as_sf(data)
+data_sampled <- sample_n(data_sf, 10000)
+
+data_aggregated <- data_sampled |>
+  group_by(LIBELLE_ARRET) |>
+  summarize(geometry = st_convex_hull(st_union(geometry))) |> distinct()
+# Transformation des données en système de coordonnées WGS 84
+data_sf_poly <- data_aggregated[st_geometry_type(data_aggregated) %in% c("POLYGON"), ]
+
+data_sf_wgs84 <- st_transform(data_sf_poly, crs = 4326)
+
+
 # Step 4: Comparison with Norms
 # 4.1 Define Normal Weeks
 normal_week <- data %>%
