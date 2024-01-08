@@ -14,7 +14,7 @@ library(lubridate)
 
 # UI definition
 ui <- dashboardPage(
-  dashboardHeader(title = "My Shiny Dashboard"),
+  dashboardHeader(title = "STIF Dashboard"),
   # dashboardSidebar section
   dashboardSidebar(
     dateRangeInput("reference_period", label = "Select Reference Period", start = "2022-01-01", end = "2022-12-31"),

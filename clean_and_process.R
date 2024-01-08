@@ -238,6 +238,8 @@ df_2023s1_new <- clean_and_process_data(df_2023s1)
 # change type of ID_REFA_LDA to string
 arrets <- mutate(arrets, ID_REFA_LDA = as.character(ID_REFA_LDA))
 
+names(arrets)[names(arrets) == "idrefa_lda"] <- "ID_REFA_LDA"
+
 
 # Combine dataframes
 validations <- bind_rows(
@@ -255,7 +257,6 @@ validations <- bind_rows(
      df_2022s2_new,
      df_2023s1_new
 )
-names(arrets)[names(arrets) == "idrefa_lda"] <- "ID_REFA_LDA"
 
 # change type of ID_REFA_LDA to string
 
