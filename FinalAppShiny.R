@@ -14,7 +14,7 @@ library(lubridate)
 
 # UI definition
 ui <- dashboardPage(
-  dashboardHeader(title = "STIF Dashboard"),
+  dashboardHeader(title = "My Shiny Dashboard"),
   # dashboardSidebar section
   dashboardSidebar(
     dateRangeInput("reference_period", label = "Select Reference Period", start = "2022-01-01", end = "2022-12-31"),
@@ -51,15 +51,16 @@ ui <- dashboardPage(
 server <- function(input, output) {
   
   output$map <- renderLeaflet({
-    leaflet(data_sf_wgs84) %>%
+    leaflet(data_sf_wgs84_clean) %>%
       addTiles() %>%
       addPolygons(
         color = ~ifelse(LIBELLE_ARRET == input$selected_station, "red", "blue"),
         fillColor = ~ifelse(LIBELLE_ARRET == input$selected_station, "red", "blue"),
         fillOpacity = 0.7,
         weight = 1,
-        label = ~LIBELLE_ARRET, 
-        popup = ~LIBELLE_ARRET) 
+        label = ~LIBELLE_ARRET,
+        popup = ~paste(LIBELLE_ARRET, "Nombre de validations: ", total_validations, " pourcentage :", validation_percentage)
+      ) 
   })
   
   
